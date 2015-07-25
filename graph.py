@@ -109,6 +109,7 @@ class Visual:
             self.size = s.get_size()
             right.append(s)
             left.append(pygame.transform.flip(s, True, False))
+        assert i>0,"no such file {}".format("graphics/Battlers/{}_{}.png".format(filename, i))
         if repeat:
             self.right = make_screenplay(cycle(right),1/20)
             self.left = make_screenplay(cycle(left),1/20)
@@ -177,16 +178,21 @@ class Unit:
                 normalpos = self.pos + i.relpos - middis
                 flippedpos = self.pos + (w, 0) - middis + (-i.relpos.x, i.relpos.y) - (i.image.size[0], 0)
                 screen.blit(i.image(self.flipped), [normalpos, flippedpos][self.flipped])
-
+        w, h = self.bbox().size
+        middis = (w / 2, h / 2)
         screen.fill((127, 127, 127), (self.pos.x - w // 2, self.pos.y + h // 2 + 5, w, 5))
         screen.fill((0, 127, 0), (self.pos.x - w // 2, self.pos.y + h // 2 + 5, w * self.health / self.maxhealth, 5))
 
     def step(self):
-        self.ai()
         self.cooldown.subtract({k:1 for k in self.cooldown})
         for i in self.parts:
             if self.health > i.minhealth:
                 i.function()
+        self.ai()
+
+    @property
+    def activeparts(self):
+        return sum(self.health > i.minhealth for i in self.parts)
 
     def ai(self):
         pass
@@ -217,6 +223,12 @@ class Unit:
 
     def bbox(self):
         w, h = self.mainsprite.size
+        try:
+            wr = max(abs(2*p.relpos.x+p.image.size[0]//2)+p.image.size[0]//2 for p in self.parts)
+            hr = max(abs(2*p.relpos.y+p.image.size[1]//2)+p.image.size[1]//2 for p in self.parts)
+            w,h = max(w,wr), max(h,hr)
+        except ValueError:
+            pass
         middis = (w / 2, h / 2)
         return (pygame.Rect(self.pos - middis, (w, h)))
 

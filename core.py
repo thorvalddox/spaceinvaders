@@ -31,12 +31,16 @@ class PlayerShip(Unit):
                 if isinstance(e,EnemySimple):
                     e.damage = e.maxhealth
                     e.checkdead()
+        elif self.keys[pygame.K_o]:
+            for e in self.graph.objectlist:
+                if isinstance(e,EnemySimple):
+                    e.hspeed=0
         #elif self.keys[pygame.K_a]:
         #    self.launch("sprite_enemy_shot_rotating",20,(40,-20),(0,-5),0.1)
 
     def draw(self,screen):
         Unit.draw(self,screen)
-        w,h = self.mainsprite.size
+        w,h = self.bbox().size
         screen.fill((127, 127, 127), (self.pos.x - w // 2, self.pos.y + h // 2 + 10, w, 5))
         screen.fill((0, 0, 255), (self.pos.x - w // 2, self.pos.y + h // 2 + 10, w * self.exp / 100, 5))
         for i in range(self.level):
@@ -60,44 +64,52 @@ class EnemySimple(Unit):
         self.sounds.update(data.get("sounds",{}))
         self.options.update(data.get("options",{}))
         self.firespeed = data.get("firespeed",10)
-        self.bullet = "sprite_enemy_" + data.get("bullet","shot_pulse")
+        self.bullet = data.get("bullet","shot_pulse")
         self.strenght = data.get("strength",10)
+        self.pattern = data.get("pattern","horiz")
+
+        if self.pattern != "horiz":
+            self.vspeed = self.hspeed/2
+        else:
+            self.vspeed = 0
 
         parts = data.get("parts",[])
         for p in parts:
-            self.load_part(p["sprite"],p["pos"],p["minhealth"],partial(self.runpart,p))
+            self.load_part("sprite_enemy_"+p["sprite"],p["pos"],p["minhealth"],partial(self.runpart,p))
 
 
     def ai(self):
-        self.pos = self.pos + (self.hspeed*self.timefac,0)
+        self.pos = self.pos + (self.hspeed*self.timefac,self.vspeed*self.timefac)
         if self.pos.x < 100:
             self.hspeed = abs(self.hspeed)
         elif self.pos.x > 1180:
             self.hspeed = -abs(self.hspeed)
-        if self.pos.x > 0:
-            self.launch_at(self.bullet,self.strenght,(0,0),self.target.pos,self.firespeed,0)
+        if self.pos.y < 200:
+            self.vspeed = abs(self.vspeed)
+        elif self.pos.y > 350:
+            self.vspeed = -abs(self.vspeed)
+        if self.pos.x > 0 and self.activeparts==0:
+            self.launch_at("sprite_enemy_"+self.bullet,self.strenght,(0,0),self.target.pos,self.firespeed,0)
 
     def runpart(self,data):
         func = data.get("func","none")
         if func == "none":
             return
         elif func == "fire":
-            self.launch_at(data.get("bullet",self.bullet),
+            self.launch_at("sprite_enemy_"+data.get("bullet",self.bullet),
                            data.get("strenght",self.strenght),
-                           data.get("relpos",(0,0)),
+                           data.get("pos",(0,0)),
                            self.target.pos,
                            data.get("firespeed",self.firespeed),
                            0,cooldownslot=data.get("slot",1))
 
 class EnemyStalk(EnemySimple):
     def ai(self):
-        self.pos = self.pos + (self.hspeed*self.timefac,0)
-        if self.pos.x < self.target.pos.x:
+        EnemySimple.ai(self)
+        if self.pos.x < self.target.pos.x-50:
             self.hspeed = abs(self.hspeed)
-        elif self.pos.x > self.target.pos.x:
+        elif self.pos.x > self.target.pos.x+50:
             self.hspeed = -abs(self.hspeed)
-        if self.pos.x > 0:
-            self.launch_at(self.bullet,self.strenght,(0,0),self.target.pos,self.firespeed,0)
 
 class jsonLoader:
     def __init__(self):
@@ -112,7 +124,7 @@ class jsonLoader:
         player.exp += 12//player.level
 
     def wave_generator(self, graph, player):
-        for wave in cycle(self.waves):
+        for wave in self.waves:
             player.damage = 0
             for n in wave:
                 self.spawn_enemy(graph,player,n)

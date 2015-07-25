@@ -11,6 +11,18 @@
         "cooldown": 240
       }
     },
+    "Swap Orb": {
+      "type": "simple",
+      "image": "sphereprobe",
+      "life": 50,
+      "strenght": 20,
+      "speed": 3,
+      "firespeed": 12,
+      "pattern":"broken",
+      "options": {
+        "cooldown": 120
+      }
+    },
     "Triag": {
       "type": "simple",
       "image": "triangleship",
@@ -37,18 +49,33 @@
       "type": "simple",
       "image": "duelengine_main",
       "life": 100,
-      "strenght": 15,
+      "strenght": 30,
       "speed": 3,
-      "firespeed" :8 ,
+      "firespeed" :16 ,
       "options": {
-        "cooldown": 140
+        "cooldown": 120
       },
       "parts":[
         {
           "sprite": "duelengine_left",
-          "pos": [-20,20],
-          "minhealth": 75
+          "pos": [-30,15],
+          "minhealth": 75,
+          "func":"fire",
+          "strenght": 15,
+          "firespeed": 8,
+          "bullet":"shot_small_blue",
+          "slot": 1
+        } ,      {
+          "sprite": "duelengine_right",
+          "pos": [81,15],
+          "minhealth": 50,
+          "func":"fire",
+          "strenght": 15,
+          "firespeed": 8,
+          "bullet":"shot_small_blue",
+          "slot": 2
         }
+
       ]
     }
   },
@@ -70,6 +97,12 @@
     ],
     [
       "Dual"
+    ],
+    [
+      "Swap Orb",
+      "Fluc Orb",
+      "Orb",
+      "Orb"
     ]
   ]
 }
