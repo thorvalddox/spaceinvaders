@@ -1,0 +1,75 @@
+{
+  "Enemies": {
+    "Orb": {
+      "type": "simple",
+      "image": "sphereprobe",
+      "life": 20,
+      "strenght": 10,
+      "speed": 2,
+      "firespeed": 10,
+      "options": {
+        "cooldown": 240
+      }
+    },
+    "Triag": {
+      "type": "simple",
+      "image": "triangleship",
+      "life": 30,
+      "strenght": 15,
+      "speed": 4,
+      "firespeed": 12,
+      "options": {
+        "cooldown": 180
+      }
+    },
+    "Fluc Orb": {
+      "type": "stalk",
+      "image": "sphereprobe",
+      "life": 45,
+      "strenght": 20,
+      "speed": 3,
+      "firespeed": 8,
+      "options": {
+        "cooldown": 160
+      }
+    },
+    "Dual": {
+      "type": "simple",
+      "image": "duelengine_main",
+      "life": 100,
+      "strenght": 15,
+      "speed": 3,
+      "firespeed" :8 ,
+      "options": {
+        "cooldown": 140
+      },
+      "parts":[
+        {
+          "sprite": "duelengine_left",
+          "pos": [-20,20],
+          "minhealth": 75
+        }
+      ]
+    }
+  },
+  "Waves": [
+    [
+      "Orb",
+      "Orb",
+      "Orb"
+    ],
+    [
+      "Orb",
+      "Orb",
+      "Triag",
+      "Triag"
+    ],
+    [
+      "Fluc Orb",
+      "Fluc Orb"
+    ],
+    [
+      "Dual"
+    ]
+  ]
+}

@@ -1,8 +1,9 @@
 __author__ = 'thorvald'
 
-from collections import namedtuple
+from collections import namedtuple, Counter
 from itertools import count, cycle
 from math import sqrt
+from random import randrange
 import os.path
 
 import pygame
@@ -46,15 +47,25 @@ class Graphics:
         self.timepassed = 0
         pygame.mixer.init()
         soundlist = {
-            "dead":"Big Bomb-SoundBible.com-1219802495.wav",
-            "fire1":"Laser Blasts-SoundBible.com-108608437.wav",
-            "fire2":"Shotgun_Blast-Jim_Rogers-1914772763.wav",
-            "damage":"M1 Garand Single-SoundBible.com-1941178963.mp3"
+            "dead1":"sounds/Big Bomb-SoundBible.com-1219802495.wav",
+            "fire1":"sounds/ray_gun-Mike_Koenig-1169060422.wav",
+            "fire2":"sounds/Shotgun_Blast-Jim_Rogers-1914772763.wav",
+            "damage1":"sounds/M1 Garand Single-SoundBible.com-1941178963.wav",
+            "water":"sounds/Water Splash-SoundBible.com-800223477.wav"
         }
 
-        sounds = {n:pygame.mixer.Sound(k)}
+        self.sounds = {n:pygame.mixer.Sound(k) for n,k in soundlist.items()}
 
-    def mainloop(self):
+        for s in self.sounds.values():
+            s.set_volume(0.5)
+        self.sounds["fire1"].set_volume(0.2)
+        self.sounds["fire2"].set_volume(0.2)
+
+        self.music = pygame.mixer.Sound("sounds/Replicant_Police.wav")
+
+        self.music.play(loops=-1)
+
+    def mainloop(self,command):
         while True:
             btime = time.time()
             pygame.event.pump()
@@ -64,6 +75,7 @@ class Graphics:
             self.step()
             pygame.display.flip()
             self.timepassed = (time.time() - btime)*60
+            command()
 
     def step(self):
         self.screen.blit(self.back, (0, 0))
@@ -71,6 +83,12 @@ class Graphics:
         for i in self.objectlist:
             i.step()
             i.draw(self.screen)
+
+    def playsound(self,sound):
+        try:
+            self.sounds[sound].play()
+        except KeyError:
+            pass
 
 def make_screenplay(iter,framelenght):
     for i in iter:
@@ -128,7 +146,10 @@ class Unit:
         self.damage = 0
         self.parts = []
         self.flipped = False
-        self.cooldown = 0
+        self.cooldown = Counter()
+        self.sounds = {"fire":"","dead":"dead1","damage":"damage1"}
+        self.options = {"cooldown":60}
+        self.xmove = 0
 
     def load_part(self, filename, relpos, minhealth, function):
         self.parts.append(Part(Vector2D(relpos), Visual(filename), minhealth, function))
@@ -139,10 +160,11 @@ class Unit:
 
     def move_by_keys(self, speed):  # Put this method in step if you want it to be controlled by keyboard.
         self.keys = pygame.key.get_pressed()
-        if self.keys[pygame.K_q]:
+        self.xmove = self.keys[pygame.K_d] - self.keys[pygame.K_q]
+        if self.xmove==-1 and self.pos.x > 50:
             self.pos = self.pos - (speed*self.timefac, 0)
             self.flipped = True
-        elif self.keys[pygame.K_d]:
+        elif self.xmove==1 and self.pos.x < 1128:
             self.pos = self.pos + (speed*self.timefac, 0)
             self.flipped = False
 
@@ -161,7 +183,7 @@ class Unit:
 
     def step(self):
         self.ai()
-        self.cooldown -= self.timefac
+        self.cooldown.subtract({k:1 for k in self.cooldown})
         for i in self.parts:
             if self.health > i.minhealth:
                 i.function()
@@ -177,15 +199,21 @@ class Unit:
     def timefac(self):
         return self.graph.timepassed
 
-    def launch(self, sprite, power, relpos, initspeed, gravity,flipspeed=True):
+    def launch(self, sprite, power, relpos, initspeed, gravity,flipspeed=True,
+               relcooldown=1,alternate=1,cooldownslot=0):
+        if randrange(alternate):
+            return
         initspeed = Vector2D(initspeed)
         speed = ~initspeed if self.flipped and flipspeed else initspeed
-        if self.cooldown < 0:
+        if self.cooldown[cooldownslot] <= 0:
+            self.play("fire")
             Projectile(self.graph, sprite, power, self.origpos(relpos), speed, gravity)
-            self.cooldown = 60
+            self.cooldown[cooldownslot] = self.options["cooldown"] *relcooldown
 
-    def launch_at(self, sprite, power, relpos, target, speed, gravity):
-        self.launch(sprite, power, relpos, (Vector2D(target) - relpos - self.pos).unit() * speed, gravity,False)
+    def launch_at(self, sprite, power, relpos, target, speed, gravity,
+                  relcooldown=1,alternate=1,cooldownslot=0):
+        self.launch(sprite, power, relpos, (Vector2D(target) - relpos - self.pos).unit() * speed, gravity,
+                    False,relcooldown,alternate,cooldownslot)
 
     def bbox(self):
         w, h = self.mainsprite.size
@@ -193,10 +221,17 @@ class Unit:
         return (pygame.Rect(self.pos - middis, (w, h)))
 
     def checkdead(self):
-        if self.health < 0:
+        if self.health <= 0:
+            self.play("dead")
             self.graph.objectlist.remove(self)
             Effect(self.graph, self.pos, self.destroy)
             del self
+
+    def play(self,i):
+        self.graph.playsound(self.sounds[i])
+
+    def reset_cooldown(self):
+        self.cooldown = [0]*10
 
 
 class Projectile:
@@ -213,8 +248,12 @@ class Projectile:
         self.pos = self.pos + self.speed
         self.speed = self.speed + (0, self.gravity)
         self.check_collide()
-        if self.pos.y > 640 or self.pos.y < -640:
-            self.graph.objectlist.remove(self)
+        if self.pos.y > 550 or self.pos.y < -640:
+            self.graph.playsound("water")
+            try:
+                self.graph.objectlist.remove(self)
+            except ValueError:
+                print("removed twice")
             del self
 
     def attach(self, graph):
@@ -234,6 +273,7 @@ class Projectile:
             for u in self.graph.objectlist:
                 if isinstance(u, Unit):
                     if u.bbox().collidepoint(*self.pos):
+                        u.play("damage")
                         u.damage += self.power
                         u.checkdead()
                         self.graph.objectlist.remove(self)
