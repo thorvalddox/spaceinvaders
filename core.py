@@ -11,8 +11,8 @@ import json
 class PlayerShip(Unit):
     def __init__(self,g):
         self.pos = Vector2D((640,540))
-        self.load_main("sprite_enemy_mediumboat_main","sprite_explosion_medium")
-        self.load_part("sprite_enemy_mediumboat_frontturret",(65,-10),0,lambda:0)
+        self.load_main("mediumboat_main","medium")
+        self.load_part("frontturret",(65,-10),0,lambda:0)
         self.attach(g)
         self.sounds.update(fire="fire2")
         self.exp = 0
@@ -23,9 +23,9 @@ class PlayerShip(Unit):
         self.levelup()
 
         if self.keys[pygame.K_s]:
-            self.launch("sprite_enemy_shot_rotating",20,(40,-20),(12+abs(self.xmove*4),-12),0.2)
+            self.launch("rotating",20,(40,-20),(12+abs(self.xmove*4),-12),0.2)
         elif self.keys[pygame.K_z] and self.level >= 2:
-            self.launch("sprite_enemy_shot_rotating",20,(40,-20),(abs(self.xmove*4),-17),0.2)
+            self.launch("rotating",20,(40,-20),(abs(self.xmove*4),-17),0.2)
         elif self.keys[pygame.K_p]:
             for e in self.graph.objectlist:
                 if isinstance(e,EnemySimple):
@@ -35,8 +35,10 @@ class PlayerShip(Unit):
             for e in self.graph.objectlist:
                 if isinstance(e,EnemySimple):
                     e.hspeed=0
-        #elif self.keys[pygame.K_a]:
-        #    self.launch("sprite_enemy_shot_rotating",20,(40,-20),(0,-5),0.1)
+
+        if self.level >= 3:
+            self.launch_at("cluster",4,(-20,-20),self.close().pos,12,0,
+                           cooldownslot=1,relcooldown=0.1)
 
     def draw(self,screen):
         Unit.draw(self,screen)
@@ -51,11 +53,15 @@ class PlayerShip(Unit):
             self.exp -= 100
             self.level += 1
             if self.level == 3:
-                self.load_part("sprite_enemy_mediumboat_rearturret",(10,-10),0,lambda:0)
+                self.load_part("rearturret",(10,-10),0,lambda:0)
 
+    def close(self) -> Unit:
+        for i in self.graph.objectlist:
+            if i is not self:
+                return i
 class EnemySimple(Unit):
     def __init__(self,g,player,data):
-        self.load_main("sprite_enemy_" + data.get("image","largeboat_bridge"),"sprite_explosion_medium",
+        self.load_main(data.get("image","largeboat_bridge"),"medium",
                        data.get("life",30))
         self.attach(g)
         self.target = player
@@ -64,7 +70,7 @@ class EnemySimple(Unit):
         self.sounds.update(data.get("sounds",{}))
         self.options.update(data.get("options",{}))
         self.firespeed = data.get("firespeed",10)
-        self.bullet = data.get("bullet","shot_pulse")
+        self.bullet = data.get("bullet","pulse")
         self.strenght = data.get("strength",10)
         self.pattern = data.get("pattern","horiz")
 
@@ -75,7 +81,7 @@ class EnemySimple(Unit):
 
         parts = data.get("parts",[])
         for p in parts:
-            self.load_part("sprite_enemy_"+p["sprite"],p["pos"],p["minhealth"],partial(self.runpart,p))
+            self.load_part(p["sprite"],p["pos"],p["minhealth"],partial(self.runpart,p))
 
 
     def ai(self):
@@ -89,14 +95,14 @@ class EnemySimple(Unit):
         elif self.pos.y > 350:
             self.vspeed = -abs(self.vspeed)
         if self.pos.x > 0 and self.activeparts==0:
-            self.launch_at("sprite_enemy_"+self.bullet,self.strenght,(0,0),self.target.pos,self.firespeed,0)
+            self.launch_at(self.bullet,self.strenght,(0,0),self.target.pos,self.firespeed,0)
 
     def runpart(self,data):
         func = data.get("func","none")
         if func == "none":
             return
         elif func == "fire":
-            self.launch_at("sprite_enemy_"+data.get("bullet",self.bullet),
+            self.launch_at(data.get("bullet",self.bullet),
                            data.get("strenght",self.strenght),
                            data.get("pos",(0,0)),
                            self.target.pos,

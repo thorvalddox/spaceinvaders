@@ -18,7 +18,7 @@
       "strenght": 20,
       "speed": 3,
       "firespeed": 12,
-      "pattern":"broken",
+      "pattern": "broken",
       "options": {
         "cooldown": 120
       }
@@ -51,31 +51,88 @@
       "life": 100,
       "strenght": 30,
       "speed": 3,
-      "firespeed" :16 ,
+      "firespeed": 16,
       "options": {
         "cooldown": 120
       },
-      "parts":[
+      "parts": [
         {
-          "sprite": "duelengine_left",
-          "pos": [-30,15],
+          "sprite": "left",
+          "pos": [
+            -30,
+            15
+          ],
           "minhealth": 75,
-          "func":"fire",
+          "func": "fire",
           "strenght": 15,
           "firespeed": 8,
-          "bullet":"shot_small_blue",
+          "bullet": "small_blue",
           "slot": 1
-        } ,      {
-          "sprite": "duelengine_right",
-          "pos": [81,15],
+        },
+        {
+          "sprite": "right",
+          "pos": [
+            81,
+            15
+          ],
           "minhealth": 50,
-          "func":"fire",
+          "func": "fire",
           "strenght": 15,
           "firespeed": 8,
-          "bullet":"shot_small_blue",
+          "bullet": "small_blue",
           "slot": 2
         }
-
+      ]
+    },
+    "Swap Triag": {
+      "type": "simple",
+      "image": "triangleship",
+      "life": 70,
+      "strenght": 25,
+      "speed": 5,
+      "firespeed": 10,
+      "pattern": "broken",
+      "options": {
+        "cooldown": 160
+      }
+    },
+    "Dual stalker": {
+      "type": "stalk",
+      "image": "duelengine_main",
+      "life": 150,
+      "strenght": 40,
+      "speed": 4,
+      "firespeed": 12,
+      "options": {
+        "cooldown": 90
+      },
+      "parts": [
+        {
+          "sprite": "duelengine_left",
+          "pos": [
+            -30,
+            15
+          ],
+          "minhealth": 75,
+          "func": "fire",
+          "strenght": 15,
+          "firespeed": 8,
+          "bullet": "shot_small_blue",
+          "slot": 1
+        },
+        {
+          "sprite": "duelengine_right",
+          "pos": [
+            81,
+            15
+          ],
+          "minhealth": 50,
+          "func": "fire",
+          "strenght": 15,
+          "firespeed": 8,
+          "bullet": "shot_small_blue",
+          "slot": 2
+        }
       ]
     }
   },
@@ -103,6 +160,26 @@
       "Fluc Orb",
       "Orb",
       "Orb"
+    ],
+    [
+      "Swap Orb",
+      "Swap Orb",
+      "Triag",
+      "Triag"
+    ],
+    [
+      "Dual",
+      "Dual",
+      "Dual"
+    ],
+    [
+      "Swap Triag",
+      "Swap Orb",
+      "Dual",
+      "Fluc Orb"
+    ],
+    [
+      "Dual Stalker"
     ]
   ]
 }

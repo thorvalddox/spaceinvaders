@@ -4,6 +4,7 @@ from collections import namedtuple, Counter
 from itertools import count, cycle
 from math import sqrt
 from random import randrange
+from enum import Enum
 import os.path
 
 import pygame
@@ -97,19 +98,21 @@ def make_screenplay(iter,framelenght):
             yield i
 
 
+
 class Visual:
-    def __init__(self, filename,repeat=True):
+    def __init__(self, filename, type_="enemy",repeat=True):
         right = []
         left = []
+        prefix = {"unit":"enemy","shot":"enemy_shot","explosion":"explosion"}[type_]
         for i in count():
-            fname = "graphics/Battlers/{}_{}.png".format(filename, i)
+            fname = "graphics/Battlers/sprite_{}_{}_{}.png".format(prefix, filename, i)
             if not os.path.isfile(fname):
                 break
             s = pygame.image.load(fname)
             self.size = s.get_size()
             right.append(s)
             left.append(pygame.transform.flip(s, True, False))
-        assert i>0,"no such file {}".format("graphics/Battlers/{}_{}.png".format(filename, i))
+        assert i>0,"no such file {}".format(fname)
         if repeat:
             self.right = make_screenplay(cycle(right),1/20)
             self.left = make_screenplay(cycle(left),1/20)
@@ -141,8 +144,9 @@ class Unit:
             return self.pos + ~relpos
 
     def load_main(self, filename, destroy, mh=100):
-        self.mainsprite = Visual(filename)
-        self.destroy = Visual(destroy,False)
+        self.maingroup = filename.split("_")[0]
+        self.mainsprite = Visual(filename,"unit")
+        self.destroy = Visual(destroy,"explosion",False)
         self.maxhealth = mh
         self.damage = 0
         self.parts = []
@@ -153,7 +157,7 @@ class Unit:
         self.xmove = 0
 
     def load_part(self, filename, relpos, minhealth, function):
-        self.parts.append(Part(Vector2D(relpos), Visual(filename), minhealth, function))
+        self.parts.append(Part(Vector2D(relpos), Visual(self.maingroup+"_"+filename,"unit"), minhealth, function))
 
     def attach(self, graph):
         graph.objectlist.append(self)
@@ -180,6 +184,7 @@ class Unit:
                 screen.blit(i.image(self.flipped), [normalpos, flippedpos][self.flipped])
         w, h = self.bbox().size
         middis = (w / 2, h / 2)
+        #pygame.draw.rect(screen,(255,0,0),self.bbox(),1) #show bouding box
         screen.fill((127, 127, 127), (self.pos.x - w // 2, self.pos.y + h // 2 + 5, w, 5))
         screen.fill((0, 127, 0), (self.pos.x - w // 2, self.pos.y + h // 2 + 5, w * self.health / self.maxhealth, 5))
 
@@ -224,8 +229,8 @@ class Unit:
     def bbox(self):
         w, h = self.mainsprite.size
         try:
-            wr = max(abs(2*p.relpos.x+p.image.size[0]//2)+p.image.size[0]//2 for p in self.parts)
-            hr = max(abs(2*p.relpos.y+p.image.size[1]//2)+p.image.size[1]//2 for p in self.parts)
+            wr = 2*max(abs(p.relpos.x+p.image.size[0]//2-w/2)+p.image.size[0]//2 for p in self.parts)
+            hr = 2*max(abs(p.relpos.y+p.image.size[1]//2-h/2)+p.image.size[1]//2 for p in self.parts)
             w,h = max(w,wr), max(h,hr)
         except ValueError:
             pass
@@ -248,7 +253,7 @@ class Unit:
 
 class Projectile:
     def __init__(self, graph, sprite, power, pos, speed, gravity):
-        self.mainsprite = Visual(sprite)
+        self.mainsprite = Visual(sprite,"shot")
         self.power = power
         self.pos = pos
         self.speed = speed
