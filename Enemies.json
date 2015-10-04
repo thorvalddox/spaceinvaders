@@ -96,7 +96,7 @@
         "cooldown": 160
       }
     },
-    "Dual stalker": {
+    "Dual Stalker": {
       "type": "stalk",
       "image": "duelengine_main",
       "life": 150,
